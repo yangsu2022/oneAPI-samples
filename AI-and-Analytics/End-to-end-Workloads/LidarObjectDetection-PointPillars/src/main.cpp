@@ -112,39 +112,140 @@ int main(int argc, char *argv[]) {
   config.pfe_model_file = vm["pfe_model"].as<std::string>();
   config.rpn_model_file = vm["rpn_model"].as<std::string>();
 
-  // Run PointPillars for each execution device
-  for (const auto &device_type : execution_devices) {
-    if (!devicemanager::SelectDevice(device_type)) {
+/*
+  // yangsu
+  int i = 0;
+  while(i < 5) {
+    std::cout << "No " << i+1 << ". run PointPillars: \n";
+    // Run PointPillars for each execution device
+    for (const auto &device_type : execution_devices) {
+      if (!devicemanager::SelectDevice(device_type)) {
+        std::cout << "\n\n";
+        continue;
+      }
+
+      // setup PointPillars
+      pointpillars::PointPillars point_pillars(0.5f, 0.5f, config);
+      const auto start_time = std::chrono::high_resolution_clock::now();
+
+      // run PointPillars
+      try {
+        point_pillars.Detect(points.data(), number_of_points, object_detections);
+      } catch (const std::runtime_error &e) {
+        std::cout << "Exception during PointPillars execution\n";
+        std::cout << e.what() << std::endl;
+        return -1;
+      }
+      const auto end_time = std::chrono::high_resolution_clock::now();
+      std::cout << "Execution time: "
+                << std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count() << "ms\n\n";
+
+      // print results
+      std::cout << object_detections.size() << " cars detected\n";
+
+      for (auto const &detection : object_detections) {
+        std::cout << config.classes[detection.class_id] << ": Probability = " << detection.class_probabilities[0]
+                  << " Position = (" << detection.x << ", " << detection.y << ", " << detection.z
+                  << ") Length = " << detection.length << " Width = " << detection.width << "\n";
+      }
       std::cout << "\n\n";
-      continue;
     }
-
-    // setup PointPillars
-    pointpillars::PointPillars point_pillars(0.5f, 0.5f, config);
-    const auto start_time = std::chrono::high_resolution_clock::now();
-
-    // run PointPillars
-    try {
-      point_pillars.Detect(points.data(), number_of_points, object_detections);
-    } catch (const std::runtime_error &e) {
-      std::cout << "Exception during PointPillars execution\n";
-      std::cout << e.what() << std::endl;
-      return -1;
-    }
-    const auto end_time = std::chrono::high_resolution_clock::now();
-    std::cout << "Execution time: "
-              << std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count() << "ms\n\n";
-
-    // print results
-    std::cout << object_detections.size() << " cars detected\n";
-
-    for (auto const &detection : object_detections) {
-      std::cout << config.classes[detection.class_id] << ": Probability = " << detection.class_probabilities[0]
-                << " Position = (" << detection.x << ", " << detection.y << ", " << detection.z
-                << ") Length = " << detection.length << " Width = " << detection.width << "\n";
-    }
-    std::cout << "\n\n";
+    i++;
   }
+*/
+
+  // run more times for benchmarking 
+ 
+  bool iter_detect_only = false;
+  int iter_num = 5;
+  
+  if (! iter_detect_only) {
+    std::cout << "not iter_detect_only, iter with setup of pointpillars\n";
+    int i = 0;
+    while(i < iter_num) {
+      std::cout << "No " << i+1 << ". run PointPillars: \n";
+      // Run PointPillars for each execution device
+      for (const auto &device_type : execution_devices) {
+        if (!devicemanager::SelectDevice(device_type)) {
+          std::cout << "\n\n";
+          continue;
+        }
+
+        // setup PointPillars
+        pointpillars::PointPillars point_pillars(0.5f, 0.5f, config);
+        const auto start_time = std::chrono::high_resolution_clock::now();
+
+        // run PointPillars
+        try {
+          point_pillars.Detect(points.data(), number_of_points, object_detections);
+        } catch (const std::runtime_error &e) {
+          std::cout << "Exception during PointPillars execution\n";
+          std::cout << e.what() << std::endl;
+          return -1;
+        }
+        const auto end_time = std::chrono::high_resolution_clock::now();
+        std::cout << "Execution time: "
+                  << std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count() << "ms\n\n";
+
+        // print results
+        std::cout << object_detections.size() << " cars detected\n";
+
+        for (auto const &detection : object_detections) {
+          std::cout << config.classes[detection.class_id] << ": Probability = " << detection.class_probabilities[0]
+                    << " Position = (" << detection.x << ", " << detection.y << ", " << detection.z
+                    << ") Length = " << detection.length << " Width = " << detection.width << "\n";
+        }
+        std::cout << "\n\n";
+      }
+      i++;
+    }
+  } else {
+    std::cout << "iter_detect_only, iter without setup of pointpillars\n";
+    // iter_detect_only
+    // Run PointPillars for each execution device
+    for (const auto &device_type : execution_devices) {
+      if (!devicemanager::SelectDevice(device_type)) {
+        std::cout << "\n\n";
+        continue;
+      }
+
+      // setup PointPillars
+      pointpillars::PointPillars point_pillars(0.5f, 0.5f, config);
+      const auto start_time = std::chrono::high_resolution_clock::now();
+
+      int i = 0;
+      while(i < iter_num) {
+        std::cout << "No " << i+1 << ". run PointPillars: \n";
+        // run PointPillars
+        try {
+          point_pillars.Detect(points.data(), number_of_points, object_detections);
+        } catch (const std::runtime_error &e) {
+          std::cout << "Exception during PointPillars execution\n";
+          std::cout << e.what() << std::endl;
+          return -1;
+        }
+        const auto end_time = std::chrono::high_resolution_clock::now();
+        std::cout << "Execution time: "
+                  << std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count() << "ms\n\n";
+           
+        i++;
+      }
+
+      // print results
+      std::cout << object_detections.size() << " cars detected\n";
+
+      for (auto const &detection : object_detections) {
+        std::cout << config.classes[detection.class_id] << ": Probability = " << detection.class_probabilities[0]
+                  << " Position = (" << detection.x << ", " << detection.y << ", " << detection.z
+                  << ") Length = " << detection.length << " Width = " << detection.width << "\n";
+      }
+      std::cout << "\n\n";
+    }
+
+  }
+
+
+ 
 
   return 0;
 }
